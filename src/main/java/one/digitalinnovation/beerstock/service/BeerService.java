@@ -63,7 +63,7 @@ public class BeerService {
             throw new BeerStockExceededException();
         }
 
-        beerToIncrementStock.setQuantity(quantity);
+        beerToIncrementStock.setQuantity(totalQuantity);
         Beer beerIncremented = beerRepository.save(beerToIncrementStock);
 
         return beerMapper.toDTO(beerIncremented);
