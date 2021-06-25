@@ -2,6 +2,7 @@ package one.digitalinnovation.beerstock.service;
 
 import one.digitalinnovation.beerstock.dto.BeerDTO;
 import one.digitalinnovation.beerstock.entity.Beer;
+import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
 import one.digitalinnovation.beerstock.mapper.BeerMapper;
 import one.digitalinnovation.beerstock.builder.BeerDTOBuilder;
 import one.digitalinnovation.beerstock.repository.BeerRepository;
@@ -14,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -73,5 +76,71 @@ public class BeerServiceTest {
         assertThrows(BeerAlreadyRegisteredException.class,
                 () -> beerService.createBeer(beerDTO));
 
+    }
+
+    @Test
+    void whenAValidBeerNameIsGivenThenReturnABeer()
+            throws BeerNotFoundException {
+
+        // GIVEN
+        BeerDTO expectedFoundBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        Beer expectedFoundBeer = beerMapper.toModel(expectedFoundBeerDTO);
+
+        // WHEN
+        when(beerRepository.findByName(expectedFoundBeer.getName()))
+                .thenReturn(Optional.of(expectedFoundBeer));
+
+        // THEN
+        BeerDTO foundBeerDTO = beerService.findByName(expectedFoundBeerDTO.getName());
+
+        assertThat(foundBeerDTO, is(equalTo(expectedFoundBeerDTO)));
+    }
+
+    @Test
+    void whenANotRegisteredBeerNameIsGivenThenThrowAnException() {
+
+        // GIVEN
+        BeerDTO expectedFoundBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+
+        // WHEN
+        when(beerRepository.findByName(expectedFoundBeerDTO.getName()))
+                .thenReturn(Optional.empty());
+
+        // THROW
+        assertThrows(BeerNotFoundException.class,
+                () -> beerService.findByName(expectedFoundBeerDTO.getName()));
+
+    }
+
+    @Test
+    void whenListBeersIsCalledReturnAListOfBeers() {
+
+        // GIVEN
+        BeerDTO expectedFoundBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        Beer expectedFoundBeer = beerMapper.toModel(expectedFoundBeerDTO);
+
+        // WHEN
+        when(beerRepository.findAll())
+                .thenReturn(Collections.singletonList(expectedFoundBeer));
+
+        // THEN
+        List<BeerDTO> listBeersDTO = beerService.listAll();
+
+        assertThat(listBeersDTO, is(not(empty())));
+        assertThat(listBeersDTO.get(0), is(equalTo(expectedFoundBeerDTO)));
+
+    }
+
+    @Test
+    void whenListBeersIsCalledReturnAnEmptyList() {
+
+        // WHEN
+        when(beerRepository.findAll())
+                .thenReturn(Collections.EMPTY_LIST);
+
+        // THEN
+        List<BeerDTO> listBeersDTO = beerService.listAll();
+
+        assertThat(listBeersDTO, is(empty()));
     }
 }
