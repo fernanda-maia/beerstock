@@ -1,6 +1,8 @@
 package one.digitalinnovation.beerstock.controller;
 
 import one.digitalinnovation.beerstock.dto.BeerDTO;
+import one.digitalinnovation.beerstock.dto.QuatityDTO;
+import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
 import one.digitalinnovation.beerstock.service.BeerService;
 import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
 import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
@@ -21,10 +23,9 @@ public class BeerController implements BeerCotrollerDocs {
 
     private final BeerService beerService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public BeerDTO createBeer(@RequestBody @Valid BeerDTO beerDTO) throws BeerAlreadyRegisteredException {
-        return beerService.createBeer(beerDTO);
+    @GetMapping
+    public List<BeerDTO> listBeers() {
+        return beerService.listAll();
     }
 
     @GetMapping("/{name}")
@@ -32,14 +33,23 @@ public class BeerController implements BeerCotrollerDocs {
         return beerService.findByName(name);
     }
 
-    @GetMapping
-    public List<BeerDTO> listBeers() {
-        return beerService.listAll();
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public BeerDTO createBeer(@RequestBody @Valid BeerDTO beerDTO) throws BeerAlreadyRegisteredException {
+        return beerService.createBeer(beerDTO);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long id) throws BeerNotFoundException {
         beerService.deleteById(id);
+    }
+
+    @PatchMapping("/{id}/increment")
+    public BeerDTO increment(@PathVariable Long id,
+                             @RequestBody @Valid QuatityDTO quatityDTO)
+            throws BeerNotFoundException, BeerStockExceededException {
+
+        return beerService.increment(id, quatityDTO.getQuantity());
     }
 }
