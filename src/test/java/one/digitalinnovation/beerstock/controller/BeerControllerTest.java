@@ -2,10 +2,11 @@ package one.digitalinnovation.beerstock.controller;
 
 import one.digitalinnovation.beerstock.dto.BeerDTO;
 import one.digitalinnovation.beerstock.dto.QuatityDTO;
-import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
 import one.digitalinnovation.beerstock.service.BeerService;
 import one.digitalinnovation.beerstock.builder.BeerDTOBuilder;
 import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
+import one.digitalinnovation.beerstock.exception.BeerStockNegativeException;
+import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -216,6 +217,82 @@ public class BeerControllerTest {
                 .andExpect(jsonPath("$.brand", is(incrementedBeerDTO.getBrand())))
                 .andExpect(jsonPath("$.type", is(incrementedBeerDTO.getType().toString())))
                 .andExpect(jsonPath("$.quantity", is(incrementedBeerDTO.getQuantity())));
+    }
+
+    @Test
+    void whenPATCHIsCalledIncrementGreaterThanMaxThenABadRequestStatusIsReturned()
+            throws Exception {
+
+        // GIVEN
+        QuatityDTO quatityDTO = QuatityDTO.builder()
+                .quantity(41)
+                .build();
+
+        BeerDTO expectedBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        expectedBeerDTO.setQuantity(expectedBeerDTO.getQuantity() + quatityDTO.getQuantity());
+
+        // WHEN
+        when(beerService.increment(VALID_BEER_ID, quatityDTO.getQuantity()))
+                .thenThrow(BeerStockExceededException.class);
+
+        // THROW
+        mockMvc.perform(
+                patch(BEER_API_URL_PATH + "/" + VALID_BEER_ID + BEER_API_SUBPATH_INCREMENT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJSONString(quatityDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void whenPATCHIsCalledToDecrementThenOKStatusIsReturned()
+            throws Exception {
+
+        // GIVEN
+        QuatityDTO quatityDTO = QuatityDTO.builder()
+                .quantity(10)
+                .build();
+
+        BeerDTO decrementedBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        decrementedBeerDTO.setQuantity(decrementedBeerDTO.getQuantity() - quatityDTO.getQuantity());
+
+        // WHEN
+        when(beerService.decrement(decrementedBeerDTO.getId(), quatityDTO.getQuantity()))
+                .thenReturn(decrementedBeerDTO);
+
+        // THEN
+        mockMvc.perform(
+                patch(BEER_API_URL_PATH + "/" + VALID_BEER_ID + BEER_API_SUBPATH_DECREMENT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJSONString(quatityDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(decrementedBeerDTO.getName())))
+                .andExpect(jsonPath("$.brand", is(decrementedBeerDTO.getBrand())))
+                .andExpect(jsonPath("$.type", is(decrementedBeerDTO.getType().toString())))
+                .andExpect(jsonPath("$.quantity", is(decrementedBeerDTO.getQuantity())));
+    }
+
+    @Test
+    void whenPATCHIsCalledDecrementLessThanMinThenABadRequestStatusIsReturned()
+            throws Exception {
+
+        // GIVEN
+        QuatityDTO quatityDTO = QuatityDTO.builder()
+                .quantity(40)
+                .build();
+
+        BeerDTO expectedBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        expectedBeerDTO.setQuantity(expectedBeerDTO.getQuantity() - quatityDTO.getQuantity());
+
+        // WHEN
+        when(beerService.decrement(VALID_BEER_ID, quatityDTO.getQuantity()))
+                .thenThrow(BeerStockNegativeException.class);
+
+        // THROW
+        mockMvc.perform(
+                patch(BEER_API_URL_PATH + "/" + VALID_BEER_ID + BEER_API_SUBPATH_DECREMENT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJSONString(quatityDTO)))
+                .andExpect(status().isBadRequest());
     }
 
 }

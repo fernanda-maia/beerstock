@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 @Data
@@ -15,6 +16,7 @@ import javax.validation.constraints.NotNull;
 public class QuatityDTO {
 
     @NotNull
+    @Min(1)
     @Max(100)
     private Integer quantity;
 }

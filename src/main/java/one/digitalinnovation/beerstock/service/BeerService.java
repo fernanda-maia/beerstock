@@ -1,16 +1,18 @@
 package one.digitalinnovation.beerstock.service;
 
-import lombok.AllArgsConstructor;
-import one.digitalinnovation.beerstock.dto.BeerDTO;
-import one.digitalinnovation.beerstock.dto.QuatityDTO;
 import one.digitalinnovation.beerstock.entity.Beer;
-import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
-import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
-import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import one.digitalinnovation.beerstock.dto.BeerDTO;
 import one.digitalinnovation.beerstock.mapper.BeerMapper;
 import one.digitalinnovation.beerstock.repository.BeerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
+import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import one.digitalinnovation.beerstock.exception.BeerStockNegativeException;
+import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
+
+import lombok.AllArgsConstructor;
+
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +57,7 @@ public class BeerService {
 
     public BeerDTO increment(Long id, int quantity)
             throws BeerNotFoundException, BeerStockExceededException {
+
         Beer beerToIncrementStock = verifyIfExists(id);
 
         int totalQuantity = beerToIncrementStock.getQuantity() + quantity;
@@ -67,6 +70,22 @@ public class BeerService {
         Beer beerIncremented = beerRepository.save(beerToIncrementStock);
 
         return beerMapper.toDTO(beerIncremented);
+    }
+
+    public BeerDTO decrement(Long id, int quantity)
+            throws BeerNotFoundException, BeerStockNegativeException {
+
+        Beer beerToDecrement = verifyIfExists(id);
+        int totalQuantity = beerToDecrement.getQuantity() - quantity;
+
+        if(totalQuantity < 0) {
+            throw new BeerStockNegativeException();
+        }
+
+        beerToDecrement.setQuantity(totalQuantity);
+        Beer beerDecremented = beerRepository.save(beerToDecrement);
+
+        return beerMapper.toDTO(beerDecremented);
     }
 
     private void verifyIfIsRegistered(String beerName)
