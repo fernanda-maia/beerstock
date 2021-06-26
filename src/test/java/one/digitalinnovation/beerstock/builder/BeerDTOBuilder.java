@@ -27,6 +27,7 @@ public class BeerDTOBuilder {
     private BeerType type = BeerType.LAGER;
 
     public BeerDTO toBeerDTO() {
+
         return new BeerDTO(id, name, brand, max, quantity, type);
     }
 }

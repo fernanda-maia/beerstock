@@ -1,31 +1,31 @@
 package one.digitalinnovation.beerstock.controller;
 
-import one.digitalinnovation.beerstock.builder.BeerDTOBuilder;
 import one.digitalinnovation.beerstock.dto.BeerDTO;
-import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
-import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
+import one.digitalinnovation.beerstock.dto.QuatityDTO;
+import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
 import one.digitalinnovation.beerstock.service.BeerService;
-import one.digitalinnovation.beerstock.utils.JSONCovertUtils;
-import org.junit.jupiter.api.BeforeEach;
+import one.digitalinnovation.beerstock.builder.BeerDTOBuilder;
+import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+
+import org.mockito.Mock;
+import org.mockito.InjectMocks;
+
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MockMvcBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 
 import java.util.Collections;
 
-import static org.hamcrest.Matchers.*;
-
-import static one.digitalinnovation.beerstock.utils.JSONCovertUtils.*;
 import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.*;
+import static one.digitalinnovation.beerstock.utils.JSONCovertUtils.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -188,6 +188,34 @@ public class BeerControllerTest {
         mockMvc.perform(delete(BEER_API_URL_PATH + "/" + INVALID_BEER_ID)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenPATCHIsCalledToIncrementThenOKStatusIsReturned()
+            throws Exception {
+
+        // GIVEN
+        QuatityDTO quatityDTO = QuatityDTO.builder()
+                .quantity(10)
+                .build();
+
+        BeerDTO incrementedBeerDTO = BeerDTOBuilder.builder().build().toBeerDTO();
+        incrementedBeerDTO.setQuantity(incrementedBeerDTO.getQuantity() + quatityDTO.getQuantity());
+
+        // WHEN
+        when(beerService.increment(incrementedBeerDTO.getId(), quatityDTO.getQuantity()))
+                .thenReturn(incrementedBeerDTO);
+
+        // THEN
+        mockMvc.perform(
+                patch(BEER_API_URL_PATH + "/" + VALID_BEER_ID + BEER_API_SUBPATH_INCREMENT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJSONString(quatityDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is(incrementedBeerDTO.getName())))
+                .andExpect(jsonPath("$.brand", is(incrementedBeerDTO.getBrand())))
+                .andExpect(jsonPath("$.type", is(incrementedBeerDTO.getType().toString())))
+                .andExpect(jsonPath("$.quantity", is(incrementedBeerDTO.getQuantity())));
     }
 
 }
